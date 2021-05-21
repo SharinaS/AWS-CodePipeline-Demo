@@ -16,7 +16,7 @@ Parameters:
   GitHubBranchName:
     Type: String
     Description: Name of the GitHub branch that should trigger the pipeline
-    Default: main
+    Default: demopipeline
 
   GitHubConnectionArn:
     Type: String
@@ -28,16 +28,98 @@ Parameters:
     Description: Choose the name for the bucket that will store the pipeline artifacts
     Default: sharina-pipeline-demo-artifacts
 
-  SandboxAccountId:
-    Type: String
-    Description: AWS Account Id
-    MaxLength: 12
-    MinLength: 12
-    Default: "842337631775"
+  # SandboxAccountId:
+  #   Type: String
+  #   Description: AWS Account Id
+  #   MaxLength: 12
+  #   MinLength: 12
+  #   Default: "842337631775"
 
 Resources:
 
+  #------- CodeBuild -------
+  DemoCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE # The build project has build output generated through AWS CodePipeline.
+      Description: Does something
+      EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
+      Environment: #required
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        EnvironmentVariables:
+        - Name: ROLE
+          Value: ""
+        - Name: DEPLOY_REGION
+          Value: ""
+      LogsConfig:
+        CloudWatchLogs:
+          Status: "ENABLED"
+      Name: DemoBuildProject
+      ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
+      TimeoutInMinutes: 10
+      Source:
+        Type: CODEPIPELINE # specifies the source code settings for the project, such as the source code's repository type and location - source code placed in S3 bucket.
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                python: 3.7
+            build:
+              commands:
+                - echo "Hello World"
+                - echo "Checking current working directory"
+                - ls
+          artifacts:
+            files:
+              - '**/*'
+
   #------- CodePipeline -------
+  DemoPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        EncryptionKey:
+          Id: !GetAtt CMKKeyForPipeline.Arn
+          Type: KMS
+        Location: !Ref CodePipelineS3Bucket
+      RoleArn: !GetAtt DemoPipelineRole.Arn
+      Name: DemoPipeline
+      Stages:
+        - Name: GitHubSource
+          Actions:
+            - Name: SourceCodeStar
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepoName}"
+                BranchName: !Ref GitHubBranchName
+              OutputArtifacts: # This option can only be used by CodeBuild downstream actions.
+                - Name: SourceOutput
+              RunOrder: 1
+        - Name: HelloWorld
+          Actions:
+            - Name: DirectoryListHelloWorld
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref DemoCodeBuildProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: AccountListOutput
 
   #------- Encryption -------
   CMKKeyForPipeline:
@@ -176,12 +258,12 @@ Resources:
               - kms:DescribeKey,
               - kms:CreateGrant
             Resource: "*"
-          - Sid: AssumeRolePermissions
-            Effect: Allow
-            Action:
-              - sts:AssumeRole
-            Resource:
-              - "arn:aws:iam::*:role/DeploymentRole"
+          # - Sid: AssumeRolePermissions
+          #   Effect: Allow
+          #   Action:
+          #     - sts:AssumeRole
+          #   Resource:
+          #     - "arn:aws:iam::*:role/DeploymentRole"
 
   DemoPipelineRole:
     Type: AWS::IAM::Role
@@ -218,31 +300,31 @@ Resources:
               - codebuild:StartBuild
             Resource:
               - "*"
-          - Effect: Allow #TODO: Remove
-            Action:
-              - lambda:InvokeFunction
-            Resource:
-              - "*"
+          # - Effect: Allow #TODO: Remove
+          #   Action:
+          #     - lambda:InvokeFunction
+          #   Resource:
+          #     - "*"
       Roles:
         - !Ref DemoPipelineRole
 
-  DeploymentRole: #TODO: test this
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: DeploymentRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - cloudformation.amazonaws.com
-                - codepipeline.amazonaws.com
-              AWS:
-                - !Sub arn:aws:iam::${SandboxAccountId}:root
-            Action:
-              - sts:AssumeRole
-      Path: /
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+  # DeploymentRole: #TODO: test this
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: DeploymentRole
+  #     AssumeRolePolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - cloudformation.amazonaws.com
+  #               - codepipeline.amazonaws.com
+  #             AWS:
+  #               - !Sub arn:aws:iam::${SandboxAccountId}:root
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AdministratorAccess
 
