@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CodePipeline uses CodeBuild and GitHub
+
+Parameters:
+
+  GitHubOwner:
+    Type: String
+    Default: sharinas
+    Description: Name of the repository owner
+
+  GitHubRepoName:
+    Type: String
+    Default: AWS-CodePipeline-Demo
+    Description: Name of the GitHub Repo that this pipeline should interact with
+
+  GitHubBranchName:
+    Type: String
+    Description: Name of the GitHub branch that should trigger the pipeline
+    Default: main
+
+  GitHubConnectionArn:
+    Type: String
+    Description: ARN for the GitHub Connection v2 set up in the account in CodePipeline
+    Default: arn:aws:codestar-connections:us-west-2:842337631775:connection/05f4d969-d1f1-43ba-8eb4-14f15a9c1112
+
+  PipelineArtifactsBucketName:
+    Type: String
+    Description: Choose the name for the bucket that will store the pipeline artifacts
+    Default: sharina-pipeline-demo-artifacts
+
+  SandboxAccountId:
+    Type: String
+    Description: AWS Account Id
+    MaxLength: 12
+    MinLength: 12
+    Default: "842337631775"
+
+Resources:
+
+  #------- CodePipeline -------
+
+  #------- Encryption -------
+  CMKKeyForPipeline:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "CMK to encrypt Pipeline"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          - Sid: "Enable IAM User Permissions"
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*" # refers to this CMK
+
+          - Sid: "Allow use of the key"
+            Effect: "Allow"
+            Principal: "*"
+            Action:
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey"
+              - "kms:GenerateDataKeyWithoutPlaintext"
+              - "kms:CreateGrant"
+            Resource: "*"
+
+  CMKAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/DemoPipelineCMK
+      TargetKeyId:
+        Ref: CMKKeyForPipeline
+
+  #------- Encrypted Bucket for Pipeline Artifacts-------
+  CodePipelineS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref PipelineArtifactsBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref CMKKeyForPipeline
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CodePipelineS3Bucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: "*"
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  #------- IAM Permissions -------
+  DemoPipelineCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess #TODO: Update
+      Path: /
+
+  DemoPipelineCodeBuildPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub AcctNumUpdateCodeBuildPolicy-${AWS::Region}
+      Roles:
+        - !Ref DemoPipelineCodeBuildRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: CloudWatchLogsPolicy
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Sid: S3Policy
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:PutObject
+              - s3:GetBucketAcl
+              - s3:GetBucketLocation
+            Resource: "*"
+          - Sid: SSMPermissions
+            Effect: Allow
+            Action:
+              - ssm:Get*
+            Resource:
+              - "*"
+          - Sid: RolePermissions
+            Effect: Allow
+            Action:
+              - iam:PassRole
+              - iam:ListInstanceProfiles
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - kms:Encrypt,
+              - kms:Decrypt,
+              - kms:ReEncrypt*,
+              - kms:GenerateDataKey*,
+              - kms:DescribeKey,
+              - kms:CreateGrant
+            Resource: "*"
+          - Sid: AssumeRolePermissions
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - "arn:aws:iam::*:role/DeploymentRole"
+
+  DemoPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess #TODO: Remove
+        - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+      Path: /
+
+  DemoPipelinePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DemoPipelinePolicy-${AWS::Region}
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - iam:ListRoles
+              - iam:PassRole
+              - cloudformation:*
+              - codebuild:BatchGetBuilds
+              - codebuild:StartBuild
+            Resource:
+              - "*"
+          - Effect: Allow #TODO: Remove
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - "*"
+      Roles:
+        - !Ref DemoPipelineRole
+
+  DeploymentRole: #TODO: test this
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DeploymentRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+                - codepipeline.amazonaws.com
+              AWS:
+                - !Sub arn:aws:iam::${SandboxAccountId}:root
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
