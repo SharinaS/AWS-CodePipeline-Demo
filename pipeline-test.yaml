@@ -26,7 +26,6 @@ Parameters:
   PipelineArtifactsBucketName:
     Type: String
     Description: Choose the name for the bucket that will store the pipeline artifacts
-    Default: sharina-pipeline-artifacts
 
   ProductName:
     Type: String
@@ -37,7 +36,6 @@ Parameters:
 
   Environment:
     Type: String
-    Default: test
 
 
 Resources:
@@ -209,13 +207,13 @@ Resources:
             files:
               - '**/*'
 
-  CodeBuildTestDevDeploy:
+  CodeBuildTestDeployment:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
         Type: CODEPIPELINE
-      Name: !Sub CodeBuildTestDevDeploy-${Environment}
-      Description: Runs tests after deployment to Dev
+      Name: !Sub CodeBuildTestDeploy-${Environment}
+      Description: Runs tests after deployment of CloudFormation
       EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
       Environment:
         Type: LINUX_CONTAINER
@@ -306,9 +304,9 @@ Resources:
         #       OutputArtifacts:
         #         - Name: CfnNagScanArtifact
 
-        # - Name: ManualApprovalToDev
+        # - Name: ManualApproval
         #   Actions:
-        #     - Name: ManualApprovalToDev
+        #     - Name: ManualApproval
         #       ActionTypeId:
         #         Category: Approval
         #         Owner: AWS
@@ -318,9 +316,9 @@ Resources:
         #         CustomData: "Approval will lead to the deployment of a CloudFormation Stack"
         #       RunOrder: 1
 
-        - Name: DeployCFnS3BucketToDev
+        - Name: DeployCloudFormation
           Actions:
-            - Name: DeployCloudFormationS3Bucket
+            - Name: DeployCloudFormation
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -357,16 +355,16 @@ Resources:
               OutputArtifacts:
                 - Name: CFnOutput
 
-        - Name: TestDevDeploy
+        - Name: TestDeployment
           Actions:
-            - Name: TestDevDeploy
+            - Name: TestDeployment
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildTestDevDeploy
+                ProjectName: !Ref CodeBuildTestDeployment
               RunOrder: 1
               InputArtifacts:
                 - Name: CFnOutput
