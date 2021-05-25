@@ -267,6 +267,16 @@ Resources:
               OutputArtifacts:
                 - Name: CfnNagScanArtifact
 
+        - Name: ManualApprovalToDev
+          Actions:
+            - Name: ManualApprovalToDev
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: "1"
+              RunOrder: 1
+
         - Name: DeployCFnS3BucketToDev
           Actions:
             - Name: DeployCloudFormationS3Bucket
