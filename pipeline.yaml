@@ -172,13 +172,11 @@ Resources:
                 - STACKNAME=$PRODUCTNAME$STACKPREFIX
                 - printenv
                 - ls -lha
-
-                - cp $TEMPLATE_FILE template.yaml
                 - cat "./s3-bucket.yaml"
                 - cat "./parameters/us-west-2.json"
-                - test -z $PARAMETER_FILE || cp $PARAMETER_FILE parameters.json
-                - TOKEN=$(aws ssm get-parameter --name GithubPersonalToken --with-decryption --region ${DeployRegion} | jq -r '.Parameter.Value')
-                - sed -i "s/PLACEHOLDER/$TOKEN/g" parameters.json
+                - cp $TEMPLATE_FILE template.yaml
+                - cp $PARAMETER_FILE parameters.json
+
             build:
               commands:
                 - DEPLOY_CREDENTIALS=$(aws sts assume-role --role-arn $ROLE --role-session-name codebuild-session)
@@ -278,6 +276,8 @@ Resources:
                 Owner: AWS
                 Provider: Manual
                 Version: "1"
+              Configuration:
+                CustomData: "Approval will lead to the deploymen of a CloudFormation Stack"
               RunOrder: 1
 
         - Name: DeployCFnS3BucketToDev
