@@ -275,47 +275,47 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 1
 
-        # - Name: DirectoryList
-        #   Actions:
-        #     - Name: DirectoryList
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Version: '1'
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref DemoCodeBuildProject
-        #       RunOrder: 1
-        #       InputArtifacts:
-        #         - Name: SourceOutput
+        - Name: DirectoryList
+          Actions:
+            - Name: DirectoryList
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref DemoCodeBuildProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SourceOutput
 
-        # - Name: CfnNagScan
-        #   Actions:
-        #     - Name: CfnNagScan
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Version: '1'
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref CodeBuildCfnNagScan
-        #       RunOrder: 1
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: CfnNagScanArtifact
+        - Name: CfnNagScan
+          Actions:
+            - Name: CfnNagScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildCfnNagScan
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: CfnNagScanArtifact
 
-        # - Name: ManualApproval
-        #   Actions:
-        #     - Name: ManualApproval
-        #       ActionTypeId:
-        #         Category: Approval
-        #         Owner: AWS
-        #         Provider: Manual
-        #         Version: "1"
-        #       Configuration:
-        #         CustomData: "Approval will lead to the deployment of a CloudFormation Stack"
-        #       RunOrder: 1
+        - Name: ManualApproval
+          Actions:
+            - Name: ManualApproval
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: "1"
+              Configuration:
+                CustomData: "Approval will lead to the deployment of a CloudFormation Stack"
+              RunOrder: 1
 
         - Name: DeployCloudFormation
           Actions:
