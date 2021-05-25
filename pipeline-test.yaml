@@ -16,7 +16,6 @@ Parameters:
   GitHubBranchName:
     Type: String
     Description: Name of the GitHub branch that should trigger the pipeline
-    Default: demopipeline
 
   GitHubConnectionArn:
     Type: String
@@ -203,6 +202,7 @@ Resources:
             post_build:
               commands:
                 - aws cloudformation describe-stacks --stack-name $STACKNAME --query 'Stacks[*].Outputs' | jq '.[]' > ./cloudformation-outputs.json
+                - cat "./cloudformation-outputs.json"
           artifacts:
             files:
               - '**/*'
@@ -243,6 +243,7 @@ Resources:
                 - ls
                 - echo "Running tests"
                 - cat "./cloudformation-outputs.json"
+                - cat "./describe_stack.log"
                 - echo "Tests passed"
 
   #------- CodePipeline -------
