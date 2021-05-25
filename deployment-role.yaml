@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Deploys a role used by CodePipeline to deploy CloudFormation stacks
+
+Parameters:
+
+  1sSandboxAccountId:
+    Type: String
+    Description: AWS Account Id of the identity/federation account.
+    MaxLength: 12
+    MinLength: 12
+    Default: "842337631775"
+
+Resources:
+  DeploymentRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: DeploymentRole
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - cloudformation.amazonaws.com
+                  - codepipeline.amazonaws.com
+                AWS:
+                  - !Sub arn:aws:iam::${1sSandboxAccountId}:root
+              Action:
+                - sts:AssumeRole
+        Path: /
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AdministratorAccess

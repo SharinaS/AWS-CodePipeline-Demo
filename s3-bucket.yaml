@@ -1,0 +1,9 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates a simple S3 bucket
+
+Resources:
+  SimpleBucket:
+    Type: 'AWS::S3::Bucket'
+    # Properties:
+    #   BucketName: sharina-bucket-for-testing
