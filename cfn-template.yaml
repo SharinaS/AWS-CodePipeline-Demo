@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates a simple S3 bucket
+
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+
+Outputs:
+  S3BucketArn:
+    Description: ARN of the bucket
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: demo-bucket-arn
