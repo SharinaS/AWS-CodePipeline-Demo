@@ -118,7 +118,6 @@ Resources:
                 - if [ "$ec1" -ne "0" ] || [ "$ec2" -ne "0" ]; then echo 'ERROR'; ec=1; else echo 'SUCCESS'; ec=0; fi;
                 - echo "Exit Code Final `echo $ec`"
                 - exit $ec
-
                 - echo "www.google.com" >> outputs.json
           artifacts:
             files:
@@ -203,9 +202,9 @@ Resources:
             post_build:
               commands:
                 - aws cloudformation describe-stacks --stack-name $STACKNAME --query 'Stacks[*].Outputs' | jq '.[]' > ./cloudformation-outputs.json
-            artifacts:
-              files:
-                - '**/*'
+          artifacts:
+            files:
+              - '**/*'
 
   CodeBuildTestDevDeploy:
     Type: AWS::CodeBuild::Project
@@ -352,6 +351,8 @@ Resources:
               RunOrder: 1
               InputArtifacts:
                 - Name: SourceOutput
+              OutputArtifacts:
+                - Name: CFnOutput
 
         - Name: TestDevDeploy
           Actions:
@@ -365,7 +366,7 @@ Resources:
                 ProjectName: !Ref CodeBuildTestDevDeploy
               RunOrder: 1
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: CFnOutput
 
 
   #------- LogGroup -------

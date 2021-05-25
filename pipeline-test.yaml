@@ -26,7 +26,7 @@ Parameters:
   PipelineArtifactsBucketName:
     Type: String
     Description: Choose the name for the bucket that will store the pipeline artifacts
-    Default: sharina-pipeline-demo-artifacts
+    Default: sharina-pipeline-artifacts
 
   ProductName:
     Type: String
@@ -34,6 +34,10 @@ Parameters:
   DeployRegion:
     Type: String
     Default: us-west-2
+
+  Environment:
+    Type: String
+    Default: test
 
 
 Resources:
@@ -43,10 +47,10 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
-        Type: CODEPIPELINE # The build project has build output generated through AWS CodePipeline.
+        Type: CODEPIPELINE
       Description: Does something
       EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
-      Environment: #required
+      Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:2.0
@@ -58,11 +62,11 @@ Resources:
       LogsConfig:
         CloudWatchLogs:
           Status: "ENABLED"
-      Name: DemoBuildProject
+      Name: !Sub DemoBuildProject-${Environment}
       ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
       TimeoutInMinutes: 10
       Source:
-        Type: CODEPIPELINE # specifies the source code settings for the project, such as the source code's repository type and location - source code placed in S3 bucket.
+        Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
           phases:
@@ -77,7 +81,7 @@ Resources:
   CodeBuildCfnNagScan:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: CodeBuild-CfnNag-Scan
+      Name: !Sub CodeBuild-CfnNag-Scan-${Environment}
       Description: Independent CfnNag scan project for post build artifacts
       Artifacts:
         Type: CODEPIPELINE
@@ -125,7 +129,7 @@ Resources:
   CodeBuildDeployCFnS3Bucket:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: DeployCloudFormationTemplate
+      Name: !Sub DeployCloudFormationTemplate-${Environment}
       Description: Deploys an S3 bucket with CloudFormation stack
       ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
       TimeoutInMinutes: 60
@@ -166,7 +170,7 @@ Resources:
                 - STACKNAME=$STACKPREFIX$PRODUCTNAME
                 - printenv
                 - ls -lha
-                - cat "./s3-bucket.yaml"
+                - cat "./template.yaml"
                 - cat "./parameters/us-west-2.json"
                 - cp $TEMPLATE_FILE template.yaml
                 - cp $PARAMETER_FILE parameters.json
@@ -201,13 +205,16 @@ Resources:
             post_build:
               commands:
                 - aws cloudformation describe-stacks --stack-name $STACKNAME --query 'Stacks[*].Outputs' | jq '.[]' > ./cloudformation-outputs.json
+          artifacts:
+            files:
+              - '**/*'
 
   CodeBuildTestDevDeploy:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
         Type: CODEPIPELINE
-      Name: CodeBuildTestDevDeploy
+      Name: !Sub CodeBuildTestDevDeploy-${Environment}
       Description: Runs tests after deployment to Dev
       EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
       Environment:
@@ -237,6 +244,7 @@ Resources:
                 - echo "Checking current working directory"
                 - ls
                 - echo "Running tests"
+                - cat "./cloudformation-outputs.json"
                 - echo "Tests passed"
 
   #------- CodePipeline -------
@@ -250,7 +258,7 @@ Resources:
           Type: KMS
         Location: !Ref CodePipelineS3Bucket
       RoleArn: !GetAtt DemoPipelineRole.Arn
-      Name: DemoPipeline
+      Name: !Sub DemoPipeline-${Environment}
       Stages:
         - Name: GitHubSource
           Actions:
@@ -264,23 +272,23 @@ Resources:
                 ConnectionArn: !Ref GitHubConnectionArn
                 FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepoName}"
                 BranchName: !Ref GitHubBranchName
-              OutputArtifacts: # This option can only be used by CodeBuild downstream actions.
+              OutputArtifacts:
                 - Name: SourceOutput
               RunOrder: 1
 
-        - Name: DirectoryList
-          Actions:
-            - Name: DirectoryList
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref DemoCodeBuildProject
-              RunOrder: 1
-              InputArtifacts:
-                - Name: SourceOutput
+        # - Name: DirectoryList
+        #   Actions:
+        #     - Name: DirectoryList
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: CodeBuild
+        #       Configuration:
+        #         ProjectName: !Ref DemoCodeBuildProject
+        #       RunOrder: 1
+        #       InputArtifacts:
+        #         - Name: SourceOutput
 
         # - Name: CfnNagScan
         #   Actions:
@@ -332,20 +340,22 @@ Resources:
                     },
                     {
                       "name": "TEMPLATE_FILE",
-                      "value": "./s3-bucket.yaml"
+                      "value": "./template.yaml"
                     },
                     {
                       "name": "PARAMETER_FILE",
-                      "value": "./parameters/us-west-2.json"
+                      "value": "./parameters/test.json"
                     },
                     {
                       "name": "STACKPREFIX",
-                      "value": "sharina"
+                      "value": "demo-"
                     }
                   ]
               RunOrder: 1
               InputArtifacts:
                 - Name: SourceOutput
+              OutputArtifacts:
+                - Name: CFnOutput
 
         - Name: TestDevDeploy
           Actions:
@@ -359,14 +369,14 @@ Resources:
                 ProjectName: !Ref CodeBuildTestDevDeploy
               RunOrder: 1
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: CFnOutput
 
 
   #------- LogGroup -------
   DeployCodePipelineCloudformationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: CodeBuildDeployCloudformationDemoLogGroup
+      LogGroupName: !Sub CodeBuildDeployCloudformationDemoLogGroup--${Environment}
       RetentionInDays: 30
 
   #------- Encryption -------
@@ -384,7 +394,6 @@ Resources:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: "kms:*"
             Resource: "*" # refers to this CMK
-
           - Sid: "Allow use of the key"
             Effect: "Allow"
             Principal: "*"
@@ -401,7 +410,7 @@ Resources:
   CMKAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: alias/DemoPipelineCMK
+      AliasName: alias/DemoPipelineCMK/TestEnv
       TargetKeyId:
         Ref: CMKKeyForPipeline
 
@@ -409,7 +418,7 @@ Resources:
   CodePipelineS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref PipelineArtifactsBucketName
+      BucketName: !Sub ${PipelineArtifactsBucketName}-${Environment}
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -428,7 +437,7 @@ Resources:
             Action:
               - s3:PutObject
             Resource:
-              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}/*
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}-${Environment}/*
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption: aws:kms
@@ -437,7 +446,7 @@ Resources:
             Principal: "*"
             Action: "s3:*"
             Resource:
-              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}/*
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucketName}-${Environment}/*
             Condition:
               Bool:
                 aws:SecureTransport: false
@@ -462,7 +471,7 @@ Resources:
   DemoPipelineCodeBuildPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: DemoCodeBuildPipelinePolicy
+      ManagedPolicyName: !Sub DemoCodeBuildPipelinePolicy-${Environment}
       Roles:
         - !Ref DemoPipelineCodeBuildRole
       PolicyDocument:
