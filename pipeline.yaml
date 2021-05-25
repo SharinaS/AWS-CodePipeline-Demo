@@ -238,47 +238,47 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 1
 
-        - Name: HelloWorld
-          Actions:
-            - Name: DirectoryListHelloWorld
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref DemoCodeBuildProject
-              RunOrder: 1
-              InputArtifacts:
-                - Name: SourceOutput
+        # - Name: HelloWorld
+        #   Actions:
+        #     - Name: DirectoryListHelloWorld
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: CodeBuild
+        #       Configuration:
+        #         ProjectName: !Ref DemoCodeBuildProject
+        #       RunOrder: 1
+        #       InputArtifacts:
+        #         - Name: SourceOutput
 
-        - Name: CfnNagScan
-          Actions:
-            - Name: CfnNagScan
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildCfnNagScan
-              RunOrder: 1
-              InputArtifacts:
-                - Name: SourceOutput
-              OutputArtifacts:
-                - Name: CfnNagScanArtifact
+        # - Name: CfnNagScan
+        #   Actions:
+        #     - Name: CfnNagScan
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: CodeBuild
+        #       Configuration:
+        #         ProjectName: !Ref CodeBuildCfnNagScan
+        #       RunOrder: 1
+        #       InputArtifacts:
+        #         - Name: SourceOutput
+        #       OutputArtifacts:
+        #         - Name: CfnNagScanArtifact
 
-        - Name: ManualApprovalToDev
-          Actions:
-            - Name: ManualApprovalToDev
-              ActionTypeId:
-                Category: Approval
-                Owner: AWS
-                Provider: Manual
-                Version: "1"
-              Configuration:
-                CustomData: "Approval will lead to the deploymen of a CloudFormation Stack"
-              RunOrder: 1
+        # - Name: ManualApprovalToDev
+        #   Actions:
+        #     - Name: ManualApprovalToDev
+        #       ActionTypeId:
+        #         Category: Approval
+        #         Owner: AWS
+        #         Provider: Manual
+        #         Version: "1"
+        #       Configuration:
+        #         CustomData: "Approval will lead to the deploymen of a CloudFormation Stack"
+        #       RunOrder: 1
 
         - Name: DeployCFnS3BucketToDev
           Actions:
@@ -313,7 +313,7 @@ Resources:
                       "value": "sharina-"
                     }
                   ]
-              RunOrder: 2
+              RunOrder: 1
               InputArtifacts:
                 - Name: SourceOutput
 
@@ -407,13 +407,13 @@ Resources:
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2FullAccess #TODO: Update
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
       Path: /
 
   DemoPipelineCodeBuildPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: !Sub AcctNumUpdateCodeBuildPolicy-${AWS::Region}
+      ManagedPolicyName: DemoCodeBuildPipelinePolicy
       Roles:
         - !Ref DemoPipelineCodeBuildRole
       PolicyDocument:
@@ -435,12 +435,6 @@ Resources:
               - s3:GetBucketAcl
               - s3:GetBucketLocation
             Resource: "*"
-          - Sid: SSMPermissions
-            Effect: Allow
-            Action:
-              - ssm:Get*
-            Resource:
-              - "*"
           - Sid: RolePermissions
             Effect: Allow
             Action:
@@ -448,6 +442,12 @@ Resources:
               - iam:ListInstanceProfiles
             Resource:
               - "*"
+          - Sid: AssumeRolePermissions
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - "arn:aws:iam::*:role/DeploymentRole"
           - Effect: Allow
             Action:
               - kms:Encrypt,
