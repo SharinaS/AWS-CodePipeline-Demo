@@ -2,7 +2,11 @@
 
 Template deploys a pipeline that:
 
+* Checks directory
 * Uses CloudFormation Nag-Scan
+* Deploys CloudFormation template
+* Runs tests
+* Passes artifacts
 
 
 

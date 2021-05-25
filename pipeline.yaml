@@ -243,7 +243,6 @@ Resources:
                 - ls
                 - echo "Running tests"
                 - cat "./cloudformation-outputs.json"
-                - cat "./describe_stack.log"
                 - echo "Tests passed"
 
   #------- CodePipeline -------
@@ -347,7 +346,7 @@ Resources:
                     },
                     {
                       "name": "STACKPREFIX",
-                      "value": "demo-"
+                      "value": "${Environment}-"
                     }
                   ]
               RunOrder: 1
@@ -409,7 +408,7 @@ Resources:
   CMKAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: alias/DemoPipelineCMK/TestEnv
+      AliasName: !Sub alias/DemoPipelineCMK/${Environment}
       TargetKeyId:
         Ref: CMKKeyForPipeline
 
