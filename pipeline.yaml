@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CodePipeline uses CodeBuild and GitHub - demo helloworld pipeline
+Description: CodePipeline uses CodeBuild and GitHub
 
 Parameters:
 
