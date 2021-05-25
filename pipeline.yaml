@@ -172,7 +172,10 @@ Resources:
                 - STACKNAME=$PRODUCTNAME$STACKPREFIX
                 - printenv
                 - ls -lha
+
                 - cp $TEMPLATE_FILE template.yaml
+                - cat "./s3-bucket.yaml"
+                - cat "./parameters/us-west-2.json"
                 - test -z $PARAMETER_FILE || cp $PARAMETER_FILE parameters.json
                 - TOKEN=$(aws ssm get-parameter --name GithubPersonalToken --with-decryption --region ${DeployRegion} | jq -r '.Parameter.Value')
                 - sed -i "s/PLACEHOLDER/$TOKEN/g" parameters.json
@@ -303,7 +306,7 @@ Resources:
                     },
                     {
                       "name": "PARAMETER_FILE",
-                      "value": "./parameters/${DeployRegion}.json"
+                      "value": "./parameters/us-west-2.json"
                     },
                     {
                       "name": "STACKPREFIX",
