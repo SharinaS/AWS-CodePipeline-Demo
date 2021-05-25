@@ -170,8 +170,8 @@ Resources:
                 - STACKNAME=$STACKPREFIX$PRODUCTNAME
                 - printenv
                 - ls -lha
-                - cat "./template.yaml"
-                - cat "./parameters/us-west-2.json"
+                - cat "./cfn-template.yaml"
+                - cat "./parameters/test.json"
                 - cp $TEMPLATE_FILE template.yaml
                 - cp $PARAMETER_FILE parameters.json
 
@@ -340,7 +340,7 @@ Resources:
                     },
                     {
                       "name": "TEMPLATE_FILE",
-                      "value": "./template.yaml"
+                      "value": "./cfn-template.yaml"
                     },
                     {
                       "name": "PARAMETER_FILE",
