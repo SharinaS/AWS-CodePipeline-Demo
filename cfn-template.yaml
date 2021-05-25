@@ -5,3 +5,10 @@ Description: >
 Resources:
   S3Bucket:
     Type: 'AWS::S3::Bucket'
+
+Outputs:
+  S3BucketArn:
+    Description: ARN of the bucket
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: demo-bucket-arn
