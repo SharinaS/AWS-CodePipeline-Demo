@@ -340,7 +340,7 @@ Resources:
                     },
                     {
                       "name": "STACKPREFIX",
-                      "value": "-sharina"
+                      "value": "sharina"
                     }
                   ]
               RunOrder: 1
