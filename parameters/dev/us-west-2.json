@@ -1,4 +1,3 @@
 [
-    "ProductName=s3-demo-bucket",
-    "SharedServiceAccountId="
-  ]
+    "ProductName=s3-demo-bucket"
+]
