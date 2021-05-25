@@ -25,6 +25,7 @@ Parameters:
   PipelineArtifactsBucketName:
     Type: String
     Description: Choose the name for the bucket that will store the pipeline artifacts
+    Default: demo-pipeline-artifacts
 
   ProductName:
     Type: String
@@ -168,7 +169,6 @@ Resources:
                 - printenv
                 - ls -lha
                 - cat "./cfn-template.yaml"
-                - cat "./parameters/test.json"
                 - cp $TEMPLATE_FILE template.yaml
                 - cp $PARAMETER_FILE parameters.json
 

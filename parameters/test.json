@@ -1,6 +1,5 @@
 [
     "ProductName=s3-demo-bucket",
-    "PipelineArtifactsBucketName=demo-pipeline-artifacts",
     "Environment=test",
     "GitHubBranchName=demopipeline"
 ]
