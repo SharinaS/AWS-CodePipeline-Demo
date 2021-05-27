@@ -5,12 +5,10 @@ Parameters:
 
   GitHubOwner:
     Type: String
-    Default: sharinas
-    Description: Name of the repository owner
+    Description: Name of the GitHub repository owner, for example, your company's GitHub name. This is not the repo name.
 
   GitHubRepoName:
     Type: String
-    Default: AWS-CodePipeline-Demo
     Description: Name of the GitHub Repo that this pipeline should interact with
 
   GitHubBranchName:
@@ -20,7 +18,6 @@ Parameters:
   GitHubConnectionArn:
     Type: String
     Description: ARN for the GitHub Connection v2 set up in the account in CodePipeline
-    Default: arn:aws:codestar-connections:us-west-2:842337631775:connection/05f4d969-d1f1-43ba-8eb4-14f15a9c1112
 
   PipelineArtifactsBucketName:
     Type: String

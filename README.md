@@ -14,6 +14,7 @@ To deploy the CodePipeline template, you will need:
 
 * the AWS CLI installed
 * to deploy ahead of time the `deployment-role.yaml` file, which provides the permissions necessary for the pipeline to deploy a CloudFormation stack
+* A CodeStart connection established in the account you want to create a CodePipeline in. More info available on AWS, [here](https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CodestarConnectionSource.html).
 * a separate JSON file stored within a `parameters` directory that provides the following parameter values:
 
 ```json
@@ -21,7 +22,10 @@ To deploy the CodePipeline template, you will need:
     "ProductName=your-product-name",
     "Environment=your-environment-such-as-dev",
     "GitHubBranchName=your-github-branch-name",
-    "TargetAccountForCFnDeployment=current-account-number-to-deploy-the-cfn-template-file-into"
+    "TargetAccountForCFnDeployment=current-account-number-to-deploy-the-cfn-template-file-into",
+    "GitHubOwner=your-GitHub-name",
+    "GitHubRepoName=your-GitHub-repo-name",
+    "GitHubConnectionArn=arn:aws:codestar-connections:<region>:<account-number>:connection/<connection-id>"
 ]
 ```
 
