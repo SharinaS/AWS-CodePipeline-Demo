@@ -24,7 +24,7 @@ Parameters:
 
   PipelineArtifactsBucketName:
     Type: String
-    Description: Choose the name for the bucket that will store the pipeline artifacts
+    Description: Create a name for a bucket that will store the pipeline artifacts (this bucket is created with this template)
     Default: demo-pipeline-artifacts
 
   ProductName:
@@ -36,6 +36,12 @@ Parameters:
 
   Environment:
     Type: String
+
+  TargetAccountForCFnDeployment:
+    Type: String
+    Description: >
+      This pipeline deploys a CloudFormation template into an AWS Account. It is currently not set up for cross-account deployment.
+      This parameter should be the account number that the CloudFormation template should be deployed into.
 
 
 Resources:
@@ -326,11 +332,11 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildDeployCFnS3Bucket
-                EnvironmentVariables: !Sub |
+                EnvironmentVariables: !Sub | # Uses DeploymentRole, which is created with a cloudformation template called "deployment-role.yaml"
                   [
                     {
                       "name": "ROLE",
-                      "value": "arn:aws:iam::842337631775:role/DeploymentRole"
+                      "value": "arn:aws:iam::${TargetAccountForCFnDeployment}:role/DeploymentRole"
                     },
                     {
                       "name": "DEPLOY_REGION",

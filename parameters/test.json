@@ -1,5 +1,0 @@
-[
-    "ProductName=s3-demo-bucket",
-    "Environment=test",
-    "GitHubBranchName=main"
-]

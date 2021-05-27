@@ -1,8 +1,8 @@
-parameters/dev.json
-parameters/test.json
 .vscode/launch.json
 .vscode/settings.json
 .vscode-upload.json
 .idea
 .DS_Store
 tmp
+parameters/test-env.json
+parameters/dev-env.json
