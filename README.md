@@ -39,7 +39,7 @@ Deploy from the AWS CLI:
 aws cloudformation deploy \
 --template-file "pipeline.yaml" \
 --stack-name <your-stack-name> \
---parameter-overrides file://parameters/<name-of-your-parameters-file>.json \
+--parameter-overrides file://parameters/params.json \
 --profile <your-aws-profile-name> \
 --capabilities CAPABILITY_NAMED_IAM
 ```
