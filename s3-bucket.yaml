@@ -5,7 +5,6 @@ Description: >
 Resources:
   S3Bucket:
     Type: 'AWS::S3::Bucket'
-    BucketName: sharina-demo-bucket
 
 Outputs:
   S3BucketArn:
