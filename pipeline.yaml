@@ -177,7 +177,7 @@ Resources:
                 - STACKNAME=$STACKPREFIX$PRODUCTNAME
                 - printenv
                 - ls -lha
-                - cat "./s3-bucket.yaml.yaml"
+                - cat "./s3-bucket.yaml"
                 - cp $TEMPLATE_FILE template.yaml
                 - cp $PARAMETER_FILE parameters.json
 
@@ -187,6 +187,7 @@ Resources:
                 - export AWS_ACCESS_KEY_ID=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.AccessKeyId | xargs)
                 - export AWS_SECRET_ACCESS_KEY=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.SecretAccessKey | xargs)
                 - export AWS_SESSION_TOKEN=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.SessionToken | xargs)
+
                 - aws cloudformation describe-stacks --region $DEPLOY_REGION --stack-name $STACKNAME > describe_stack.log || true
                 - |
                   if [ -s describe_stack.log ] && [ "$(jq -r .Stacks[0].StackStatus describe_stack.log)" = "ROLLBACK_COMPLETE" ]; then
