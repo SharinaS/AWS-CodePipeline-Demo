@@ -40,6 +40,12 @@ Parameters:
       This pipeline deploys a CloudFormation template into an AWS Account. It is currently not set up for cross-account deployment.
       This parameter should be the account number that the CloudFormation template should be deployed into.
 
+  PipelineName:
+    Type: String
+    Description: >
+      Create a descriptive and friendly name for the pipeline. Do not include the environment (such as dev),
+      as this will be added to the name automatically.
+
 
 Resources:
 
@@ -171,7 +177,7 @@ Resources:
                 - STACKNAME=$STACKPREFIX$PRODUCTNAME
                 - printenv
                 - ls -lha
-                - cat "./cfn-template.yaml"
+                - cat "./s3-bucket.yaml.yaml"
                 - cp $TEMPLATE_FILE template.yaml
                 - cp $PARAMETER_FILE parameters.json
 
@@ -259,7 +265,7 @@ Resources:
           Type: KMS
         Location: !Ref CodePipelineS3Bucket
       RoleArn: !GetAtt DemoPipelineRole.Arn
-      Name: !Sub DemoPipeline-${Environment}
+      Name: !Sub ${PipelineName}-${Environment}
       Stages:
         - Name: GitHubSource
           Actions:
@@ -341,7 +347,7 @@ Resources:
                     },
                     {
                       "name": "TEMPLATE_FILE",
-                      "value": "./cfn-template.yaml"
+                      "value": "./s3-bucket.yaml"
                     },
                     {
                       "name": "PARAMETER_FILE",

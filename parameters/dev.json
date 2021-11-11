@@ -1,5 +1,6 @@
 [
     "ProductName=adobe-demo",
+    "PipelineName=sharina-deploy-cfn-template",
     "Environment=dev",
     "GitHubBranchName=amplify",
     "TargetAccountForCFnDeployment=842337631775",

@@ -11,4 +11,4 @@ Outputs:
     Description: ARN of the bucket
     Value: !GetAtt S3Bucket.Arn
     Export:
-      Name: demo-bucket-arn-dev
+      Name: demo-bucket-arn
