@@ -33,7 +33,7 @@ To deploy the CodePipeline template, you will need:
 
 ### Deploy the Deployment-Role First
 
-This role is used by the pipeline to deploy a CloudFormation template of an S3 bucket with the properties specified in the `s3-bucket.yaml` file.
+This role gives the pipeline permission to deploy a CloudFormation template into an AWS account.
 
 Deploy from the AWS CLI:
 
