@@ -319,7 +319,7 @@ Resources:
                 CustomData: "Approval will lead to the deployment of a CloudFormation Stack"
               RunOrder: 1
 
-        - Name: DeployCloudFormation
+        - Name: DeployCloudFormationToDev
           Actions:
             - Name: DeployCloudFormation
               ActionTypeId:
@@ -345,7 +345,7 @@ Resources:
                     },
                     {
                       "name": "PARAMETER_FILE",
-                      "value": "./parameters/test.json"
+                      "value": "./parameters/dev.json"
                     },
                     {
                       "name": "STACKPREFIX",
