@@ -1,9 +1,9 @@
 [
-    "ProductName=your-product-name",
-    "Environment=your-environment-such-as-dev",
-    "GitHubBranchName=your-github-branch-name",
-    "TargetAccountForCFnDeployment=account-number-to-deploy-the-cfn-template-file-into",
-    "GitHubOwner=your-GitHub-name",
-    "GitHubRepoName=your-GitHub-repo-name",
-    "GitHubConnectionArn=arn:aws:codestar-connections:<region>:<account-number>:connection/<connection-id>"
+    "ProductName=adobe-demo",
+    "Environment=dev",
+    "GitHubBranchName=amplify",
+    "TargetAccountForCFnDeployment=842337631775",
+    "GitHubOwner=SharinaS",
+    "GitHubRepoName=aws-codepipeline-demo",
+    "GitHubConnectionArn=arn:aws:codestar-connections:us-west-2:842337631775:connection/05f4d969-d1f1-43ba-8eb4-14f15a9c1112"
 ]
