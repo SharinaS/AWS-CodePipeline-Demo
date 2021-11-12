@@ -24,14 +24,29 @@ To deploy the CodePipeline template, you will need:
     "ProductName=your-product-name",
     "Environment=your-environment-such-as-dev",
     "GitHubBranchName=your-github-branch-name",
-    "TargetAccountForCFnDeployment=current-account-number-to-deploy-the-cfn-template-file-into",
+    "TargetAccountForCFnDeployment=current-account-number-to-deploy-the-s3-bucket-yaml-file-into",
     "GitHubOwner=your-GitHub-name",
     "GitHubRepoName=your-GitHub-repo-name",
     "GitHubConnectionArn=arn:aws:codestar-connections:<region>:<account-number>:connection/<connection-id>"
 ]
 ```
 
-### Deploy
+### Deploy the Deployment-Role First
+
+This role gives the pipeline permission to deploy a CloudFormation template into an AWS account.
+
+Deploy from the AWS CLI:
+
+```bash
+aws cloudformation deploy \
+--template-file "deployment-role.yaml" \
+--stack-name <your-stack-name> \
+--parameter-overrides file://role-parameters/<parameter-file-name>.json \
+--profile <your-aws-profile-name>
+--capabilities CAPABILITY_NAMED_IAM
+```
+
+### Deploy the Pipeline Once the Above Role has been Deployed
 
 Deploy from the AWS CLI:
 
@@ -39,7 +54,7 @@ Deploy from the AWS CLI:
 aws cloudformation deploy \
 --template-file "pipeline.yaml" \
 --stack-name <your-stack-name> \
---parameter-overrides file://parameters/params.json \
+--parameter-overrides file://parameters/<parameter-file-name>.json \
 --profile <your-aws-profile-name> \
 --capabilities CAPABILITY_NAMED_IAM
 ```

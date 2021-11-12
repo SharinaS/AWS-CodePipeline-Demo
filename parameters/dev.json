@@ -1,0 +1,10 @@
+[
+    "ProductName=adobe-demo",
+    "PipelineName=sharina-deploy-cfn-template",
+    "Environment=dev",
+    "GitHubBranchName=amplify",
+    "TargetAccountForCFnDeployment=842337631775",
+    "GitHubOwner=SharinaS",
+    "GitHubRepoName=aws-codepipeline-demo",
+    "GitHubConnectionArn=arn:aws:codestar-connections:us-west-2:842337631775:connection/05f4d969-d1f1-43ba-8eb4-14f15a9c1112"
+]

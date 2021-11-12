@@ -4,12 +4,11 @@ Description: >
 
 Parameters:
 
-  1sSandboxAccountId:
+  TargetAccountForCFnDeployment:
     Type: String
     Description: AWS Account Id of the identity/federation account.
     MaxLength: 12
     MinLength: 12
-    Default: "842337631775"
 
 Resources:
   DeploymentRole:
@@ -25,7 +24,7 @@ Resources:
                   - cloudformation.amazonaws.com
                   - codepipeline.amazonaws.com
                 AWS:
-                  - !Sub arn:aws:iam::${1sSandboxAccountId}:root
+                  - !Sub arn:aws:iam::${TargetAccountForCFnDeployment}:root
               Action:
                 - sts:AssumeRole
         Path: /

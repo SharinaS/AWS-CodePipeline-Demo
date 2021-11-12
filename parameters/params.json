@@ -1,9 +1,0 @@
-[
-    "ProductName=your-product-name",
-    "Environment=your-environment-such-as-dev",
-    "GitHubBranchName=your-github-branch-name",
-    "TargetAccountForCFnDeployment=account-number-to-deploy-the-cfn-template-file-into",
-    "GitHubOwner=your-GitHub-name",
-    "GitHubRepoName=your-GitHub-repo-name",
-    "GitHubConnectionArn=arn:aws:codestar-connections:<region>:<account-number>:connection/<connection-id>"
-]
