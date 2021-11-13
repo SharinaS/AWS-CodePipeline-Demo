@@ -1,10 +1,8 @@
 [
-    "ProductName=descriptive-name-here",
-    "PipelineName=give-your-pipeline-a-name",
-    "Environment=specify-environment-pipeline-is-deployed-into",
-    "GitHubBranchName=name-of-the-branch-to-trigger-pipeline-from",
-    "TargetAccountForCFnDeployment=aws-account-number-to-deploy-infrastructure-into",
-    "GitHubOwner=name-of-your-github-account",
-    "GitHubRepoName=name-of-the-github-repo",
-    "GitHubConnectionArn=arn-of-your-codestar-connection-you-set-up-in-your-github-repo"
+    "PipelineName=sharina-deploy-cfn-template",
+    "Environment=dev",
+    "GitHubBranchName=use-amplify",
+    "GitHubOwner=SharinaS",
+    "GitHubRepoName=aws-codepipeline-demo",
+    "GitHubConnectionArn=arn:aws:codestar-connections:us-west-2:842337631775:connection/05f4d969-d1f1-43ba-8eb4-14f15a9c1112"
 ]
