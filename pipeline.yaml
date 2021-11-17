@@ -24,21 +24,8 @@ Parameters:
     Description: Create a name for a bucket that will store the pipeline artifacts (this bucket is created with this template)
     Default: demo-pipeline-artifacts
 
-  # ProductName:
-  #   Type: String
-
-  # DeployRegion:
-  #   Type: String
-  #   Default: us-west-2
-
   Environment:
     Type: String
-
-  # TargetAccountForCFnDeployment:
-  #   Type: String
-  #   Description: >
-  #     This pipeline deploys a CloudFormation template into an AWS Account. It is currently not set up for cross-account deployment.
-  #     This parameter should be the account number that the CloudFormation template should be deployed into.
 
   PipelineName:
     Type: String
@@ -50,7 +37,6 @@ Parameters:
 Resources:
 
   #------- CodeBuild -------
-  # DemoCodeBuildProject:
   AmplifyCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -70,9 +56,8 @@ Resources:
       LogsConfig:
         CloudWatchLogs:
           Status: "ENABLED"
-      # Name: !Sub DemoBuildProject-${Environment}
       Name: !Sub AmplifyBuildProject-${Environment}
-      ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
+      ServiceRole: !GetAtt AmplifyPipelineCodeBuildRole.Arn
       TimeoutInMinutes: 10
       Source:
         Type: CODEPIPELINE
@@ -81,181 +66,27 @@ Resources:
           phases:
             install:
               runtime-versions:
-                python: 3.9
+                nodejs: latest
+              commands:
+                - yum update -y
+                - yum install jq -y
+                - npm install -g @aws-amplify/cli
             build:
               commands:
-                - echo "Checking current working directory"
-                - ls
+                - echo "in build stage!"
+                # - amplify pull --appId db7khzj01e1xf --envName staging
+                # - amplify status
 
-  # CodeBuildCfnNagScan:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Name: !Sub CodeBuild-CfnNag-Scan-${Environment}
-  #     Description: Independent CfnNag scan project for post build artifacts
-  #     Artifacts:
-  #       Type: CODEPIPELINE
-  #     EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/standard:2.0
-  #     LogsConfig:
-  #       CloudWatchLogs:
-  #         Status: "ENABLED"
-  #     ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
-  #     TimeoutInMinutes: 10
-  #     Source:
-  #       Type: CODEPIPELINE # specifies the source code settings for the project, such as the source code's repository type and location - source code placed in S3 bucket.
-  #       BuildSpec: |
-  #         version: 0.2
-  #         phases:
-  #           install:
-  #             runtime-versions:
-  #               ruby: 2.6
-  #             commands:
-  #               - echo "Installing cfn_nag utility - `pwd`"
-  #               - gem install cfn-nag
-  #               - cfn_nag -v
-  #               - echo "cfn_nag utility installation complete `date`"
-  #           build:
-  #             commands:
-  #               - echo "Starting cfn_nag scanning `date` in `pwd`"
-  #               - for y in `find deployment/dist/* -name "*.template"`; do echo "============= $y ================" ; cfn_nag --fail-on-warnings $y || ec1=$?; done
-  #               - if [ "$ec1" -ne "0" ]; then echo 'ERROR-1'; else echo 'SUCCESS-1'; ec1=0; fi
-  #               - echo "Exit Code 1 `echo $ec1`"
-  #               - for y in `find deployment/global-s3-assets/* -name "*.template"`; do echo "============= $y ================" ; cfn_nag --fail-on-warnings $y || ec2=$?; done
-  #               - if [ "$ec2" -ne "0" ]; then echo 'ERROR-2'; else echo 'SUCCESS-2'; ec2=0; fi
-  #               - echo "Exit Code 2 `echo $ec2`"
-  #               - echo "Completed cfn_nag scanning `date`"
-  #               - echo "Analyze exit codes and exit"
-  #               - if [ "$ec1" -ne "0" ] || [ "$ec2" -ne "0" ]; then echo 'ERROR'; ec=1; else echo 'SUCCESS'; ec=0; fi;
-  #               - echo "Exit Code Final `echo $ec`"
-  #               - exit $ec
-  #         artifacts:
-  #           files:
-  #             - '**/*'
+                # TODO: Once credentials obtained, apply to headless cli commands?
 
-  # CodeBuildDeployCFnS3Bucket:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Name: !Sub DeployCloudFormationTemplate-${Environment}
-  #     Description: Deploys an S3 bucket with CloudFormation stack
-  #     ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
-  #     TimeoutInMinutes: 60
-  #     Artifacts:
-  #       Type: CODEPIPELINE
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/docker:18.09.0
-  #       PrivilegedMode: true
-  #       EnvironmentVariables:
-  #         - Name: ROLE
-  #           Value: ""
-  #         - Name: DEPLOY_REGION
-  #           Value: ""
-  #         - Name: TEMPLATE_FILE
-  #           Value: ""
-  #         - Name: PARAMETER_FILE
-  #           Value: ""
-  #         - Name: STACKPREFIX
-  #           Value: ""
-  #     LogsConfig:
-  #       CloudWatchLogs:
-  #         Status: ENABLED
-  #         GroupName: !Ref DeployCodePipelineCloudformationLogGroup
-  #     Source:
-  #       Type: CODEPIPELINE
-  #       BuildSpec: !Sub |
-  #         version: 0.2
-  #         phases:
-  #           install:
-  #             commands:
-  #               - sudo apt-get update
-  #               - sudo apt-get -y install unzip jq
-  #           pre_build:
-  #             commands:
-  #               - PRODUCTNAME=${ProductName}
-  #               - STACKNAME=$STACKPREFIX$PRODUCTNAME
-  #               - printenv
-  #               - ls -lha
-  #               - cat "./s3-bucket.yaml"
-  #               - cp $TEMPLATE_FILE template.yaml
-  #               - cp $PARAMETER_FILE parameters.json
 
-  #           build:
-  #             commands:
-  #               - DEPLOY_CREDENTIALS=$(aws sts assume-role --role-arn $ROLE --role-session-name codebuild-session)
-  #               - export AWS_ACCESS_KEY_ID=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.AccessKeyId | xargs)
-  #               - export AWS_SECRET_ACCESS_KEY=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.SecretAccessKey | xargs)
-  #               - export AWS_SESSION_TOKEN=$(echo $DEPLOY_CREDENTIALS | jq .Credentials.SessionToken | xargs)
+                # - AMPLIFY_CREDENTIALS=$(aws sts assume-role --role-arn $ROLE --role-session-name codebuild-session)
+                # - export AWS_ACCESS_KEY_ID=$(echo $AMPLIFY_CREDENTIALS | jq .Credentials.AccessKeyId | xargs)
+                # - export AWS_SECRET_ACCESS_KEY=$(echo $AMPLIFY_CREDENTIALS | jq .Credentials.SecretAccessKey | xargs)
+                # - export AWS_SESSION_TOKEN=$(echo $AMPLIFY_CREDENTIALS | jq .Credentials.SessionToken | xargs)
 
-  #               - aws cloudformation describe-stacks --region $DEPLOY_REGION --stack-name $STACKNAME > describe_stack.log || true
-  #               - |
-  #                 if [ -s describe_stack.log ] && [ "$(jq -r .Stacks[0].StackStatus describe_stack.log)" = "ROLLBACK_COMPLETE" ]; then
-  #                 echo "Old stack is in \"ROLLBACK_COMPLETE\" state. Deleting old stack"
-  #                 aws cloudformation delete-stack --stack-name $STACKNAME --region $DEPLOY_REGION
-  #                 aws cloudformation wait stack-delete-complete --stack-name $STACKNAME --region $DEPLOY_REGION
-  #                 fi
-  #               - TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%S")
-  #               - >
-  #                 aws cloudformation deploy --template-file template.yaml \
-  #                     --capabilities CAPABILITY_NAMED_IAM \
-  #                     --role-arn $ROLE \
-  #                     --stack-name $STACKNAME \
-  #                     --region $DEPLOY_REGION \
-  #                     --no-fail-on-empty-changeset \
-  #                     --parameter-overrides file://parameters.json ||
-  #                     (aws cloudformation describe-stack-events \
-  #                         --stack-name $STACKNAME \
-  #                         --output table \
-  #                         --region $DEPLOY_REGION \
-  #                         --query "StackEvents[?Timestamp >= \`$TIMESTAMP\`].[Timestamp,ResourceType,LogicalResourceId,ResourceStatus,ResourceStatusReason]" && false)
-  #           post_build:
-  #             commands:
-  #               - aws cloudformation describe-stacks --stack-name $STACKNAME --query 'Stacks[*].Outputs' | jq '.[]' > ./cloudformation-outputs.json
-  #               - cat "./cloudformation-outputs.json"
-  #         artifacts:
-  #           files:
-  #             - '**/*'
+                # navigate to amplify project folder, "amplify status" will display list of resources in project folder.
 
-  # CodeBuildTestDeployment:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Artifacts:
-  #       Type: CODEPIPELINE
-  #     Name: !Sub CodeBuildTestDeploy-${Environment}
-  #     Description: Runs tests after deployment of CloudFormation
-  #     EncryptionKey: !GetAtt CMKKeyForPipeline.Arn
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/standard:2.0
-  #       EnvironmentVariables:
-  #       - Name: ROLE
-  #         Value: ""
-  #       - Name: DEPLOY_REGION
-  #         Value: ""
-  #     LogsConfig:
-  #       CloudWatchLogs:
-  #         Status: "ENABLED"
-  #     ServiceRole: !GetAtt DemoPipelineCodeBuildRole.Arn
-  #     TimeoutInMinutes: 10
-  #     Source:
-  #       Type: CODEPIPELINE
-  #       BuildSpec: |
-  #         version: 0.2
-  #         phases:
-  #           install:
-  #             runtime-versions:
-  #               python: 3.7
-  #           build:
-  #             commands:
-  #               - echo "Checking current working directory"
-  #               - ls
-  #               - echo "Running tests"
-  #               - cat "./cloudformation-outputs.json"
-  #               - echo "Tests passed"
 
   #------- CodePipeline -------
   DemoPipeline:
@@ -267,7 +98,7 @@ Resources:
           Id: !GetAtt CMKKeyForPipeline.Arn
           Type: KMS
         Location: !Ref CodePipelineS3Bucket
-      RoleArn: !GetAtt DemoPipelineRole.Arn
+      RoleArn: !GetAtt AmplifyPipelineRole.Arn
       Name: !Sub ${PipelineName}-${Environment}
       Stages:
         - Name: GitHubSource
@@ -295,99 +126,15 @@ Resources:
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                # ProjectName: !Ref DemoCodeBuildProject
                 ProjectName: !Ref AmplifyCodeBuildProject
               RunOrder: 1
               InputArtifacts:
                 - Name: SourceOutput
 
-        # - Name: CfnNagScan
-        #   Actions:
-        #     - Name: CfnNagScan
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Version: '1'
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref CodeBuildCfnNagScan
-        #       RunOrder: 1
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: CfnNagScanArtifact
-
-        # - Name: ManualApproval
-        #   Actions:
-        #     - Name: ManualApproval
-        #       ActionTypeId:
-        #         Category: Approval
-        #         Owner: AWS
-        #         Provider: Manual
-        #         Version: "1"
-        #       Configuration:
-        #         CustomData: "Approval will lead to the deployment of a CloudFormation Stack"
-        #       RunOrder: 1
-
-        # - Name: DeployCloudFormationToDev
-        #   Actions:
-        #     - Name: DeployCloudFormation
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Version: "1"
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref CodeBuildDeployCFnS3Bucket
-        #         EnvironmentVariables: !Sub | # Uses DeploymentRole, which is created with a cloudformation template called "deployment-role.yaml"
-        #           [
-        #             {
-        #               "name": "ROLE",
-        #               "value": "arn:aws:iam::${TargetAccountForCFnDeployment}:role/DeploymentRole"
-        #             },
-        #             {
-        #               "name": "DEPLOY_REGION",
-        #               "value": "${DeployRegion}"
-        #             },
-        #             {
-        #               "name": "TEMPLATE_FILE",
-        #               "value": "./s3-bucket.yaml"
-        #             },
-        #             {
-        #               "name": "PARAMETER_FILE",
-        #               "value": "./parameters/dev.json"
-        #             },
-        #             {
-        #               "name": "STACKPREFIX",
-        #               "value": "${Environment}-"
-        #             }
-        #           ]
-        #       RunOrder: 1
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: CFnOutput
-
-        # - Name: TestDeployment
-        #   Actions:
-        #     - Name: TestDeployment
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Version: '1'
-        #         Provider: CodeBuild
-        #       Configuration:
-        #         ProjectName: !Ref CodeBuildTestDeployment
-        #       RunOrder: 1
-        #       InputArtifacts:
-        #         - Name: CFnOutput
-
-
   #------- LogGroup -------
   AmplifyCodePipelineLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      # LogGroupName: !Sub CodeBuildDeployCloudformationDemoLogGroup-${Environment}
       LogGroupName: !Sub AmplifyCodePipelineLogGroup-${Environment}
       RetentionInDays: 30
 
@@ -463,8 +210,8 @@ Resources:
               Bool:
                 aws:SecureTransport: false
 
-  #------- IAM Permissions -------
-  DemoPipelineCodeBuildRole:
+  #------- IAM Permissions for CodeBuild -------
+  AmplifyPipelineCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -477,15 +224,15 @@ Resources:
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AdministratorAccess-Amplify
       Path: /
 
-  DemoPipelineCodeBuildPolicy:
+  AmplifyPipelineCodeBuildPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       ManagedPolicyName: !Sub DemoCodeBuildPipelinePolicy-${Environment}
       Roles:
-        - !Ref DemoPipelineCodeBuildRole
+        - !Ref AmplifyPipelineCodeBuildRole
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -496,15 +243,15 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
             Resource: "*"
-          # - Sid: S3Policy
-          #   Effect: Allow
-          #   Action:
-          #     - s3:GetObject
-          #     - s3:GetObjectVersion
-          #     - s3:PutObject
-          #     - s3:GetBucketAcl
-          #     - s3:GetBucketLocation
-          #   Resource: "*"
+          - Sid: S3Policy
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:PutObject
+              - s3:GetBucketAcl
+              - s3:GetBucketLocation
+            Resource: "*"
           - Sid: RolePermissions
             Effect: Allow
             Action:
@@ -512,12 +259,6 @@ Resources:
               - iam:ListInstanceProfiles
             Resource:
               - "*"
-          # - Sid: AssumeRolePermissions
-          #   Effect: Allow
-          #   Action:
-          #     - sts:AssumeRole
-          #   Resource:
-          #     - "arn:aws:iam::*:role/DeploymentRole"
           - Effect: Allow
             Action:
               - kms:Encrypt,
@@ -528,7 +269,7 @@ Resources:
               - kms:CreateGrant
             Resource: "*"
 
-  DemoPipelineRole:
+  AmplifyPipelineRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -542,28 +283,25 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
-        # - arn:aws:iam::aws:policy/AmazonS3FullAccess
-        # - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
       Path: /
 
-  DemoPipelinePolicy:
+  AmplifyipelinePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub DemoPipelinePolicy-${AWS::Region}
+      PolicyName: !Sub AmplifyPipelinePolicy-${AWS::Region}
       PolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
             Action:
               - iam:ListRoles
-              # - iam:PassRole
-              # - cloudformation:*
               - codebuild:BatchGetBuilds
               - codebuild:StartBuild
             Resource:
               - "*"
       Roles:
-        - !Ref DemoPipelineRole
+        - !Ref AmplifyPipelineRole
 
 
