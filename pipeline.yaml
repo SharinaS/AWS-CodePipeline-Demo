@@ -47,12 +47,9 @@ Resources:
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        # EnvironmentVariables:
-        # - Name: ROLE
-        #   Value: ""
-        # - Name: DEPLOY_REGION
-        #   Value: ""
+
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
       LogsConfig:
         CloudWatchLogs:
           Status: "ENABLED"
@@ -68,17 +65,14 @@ Resources:
               runtime-versions:
                 nodejs: latest
               commands:
+                - jq --version
                 - yum update -y
-                - yum install jq -y
                 - npm install -g @aws-amplify/cli
             build:
               commands:
                 - echo "in build stage!"
                 # - amplify pull --appId db7khzj01e1xf --envName staging
                 # - amplify status
-
-                # TODO: Once credentials obtained, apply to headless cli commands?
-
 
                 # - AMPLIFY_CREDENTIALS=$(aws sts assume-role --role-arn $ROLE --role-session-name codebuild-session)
                 # - export AWS_ACCESS_KEY_ID=$(echo $AMPLIFY_CREDENTIALS | jq .Credentials.AccessKeyId | xargs)
@@ -117,9 +111,9 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 1
 
-        - Name: DirectoryList
+        - Name: Amplify
           Actions:
-            - Name: DirectoryList
+            - Name: UseAmplify
               ActionTypeId:
                 Category: Build
                 Owner: AWS
